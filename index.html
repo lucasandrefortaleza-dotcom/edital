@@ -431,14 +431,33 @@
         }
 
         // Calcula uma fase de prazo. Retorna {contagem: [...], dataFinal: Date, diasUteisGastos: n}
+        //
+        // Regra comum aos dois modos (Art. 224, caput e §3º, CPC): o prazo só COMEÇA a correr
+        // em dia útil, mesmo quando a contagem subsequente é em dias corridos. Por isso o laço
+        // de "pular até o 1º dia útil" roda ANTES de decidir o modo de contagem, e cada dia
+        // pulado fica registrado na tabela (transparência/auditoria), em vez de sumir.
         function calcularFase(dataInicioBruta, dias, tipo, labelFase) {
             var contagem = [];
-            var dataInicio;
+            var dataAtual = new Date(dataInicioBruta);
+
+            // Pré-requisito comum: avança até o 1º dia útil, registrando o que foi pulado.
+            while (!ehDiaUtil(dataAtual)) {
+                contagem.push({
+                    numero: 0,
+                    data: new Date(dataAtual),
+                    dataStr: formatarDataBR(dataAtual),
+                    diaSemana: getDiaSemana(dataAtual),
+                    fimDeSemana: ehFimDeSemana(dataAtual),
+                    feriado: ehFeriado(dataAtual),
+                    suspended: ehRecesso(dataAtual),
+                    final: false,
+                    fase: labelFase,
+                    naoConta: true
+                });
+                dataAtual.setDate(dataAtual.getDate() + 1);
+            }
 
             if (tipo === 'uteis') {
-                // contagem em dias uteis: inicio so pode ser dia util
-                dataInicio = proximoDiaUtil(dataInicioBruta);
-                var dataAtual = new Date(dataInicio);
                 var contador = 0;
                 while (contador < dias) {
                     if (ehDiaUtil(dataAtual)) {
@@ -473,31 +492,29 @@
                 var dataFinal = contagem[contagem.length - 1].data;
                 return { contagem: contagem, dataFinal: dataFinal, diasUteisGastos: dias };
             } else {
-                // dias corridos: inicio no dia seguinte ao marco, conta todo santo dia,
-                // mas fica suspenso durante o recesso (Art. 220 CPC)
-                dataInicio = new Date(dataInicioBruta);
-                var dataAtual2 = new Date(dataInicio);
+                // dias corridos: a partir do 1º dia útil (já garantido acima), conta todo santo
+                // dia, mas fica suspenso durante o recesso (Art. 220 CPC)
                 var contador2 = 0;
                 var diasUteisGastos = 0;
                 var diasAlvo = dias;
                 while (contador2 < diasAlvo) {
                     contador2++;
-                    var susp = ehRecesso(dataAtual2);
+                    var susp = ehRecesso(dataAtual);
                     var item = {
                         numero: contador2,
-                        data: new Date(dataAtual2),
-                        dataStr: formatarDataBR(dataAtual2),
-                        diaSemana: getDiaSemana(dataAtual2),
-                        fimDeSemana: ehFimDeSemana(dataAtual2),
-                        feriado: ehFeriado(dataAtual2),
+                        data: new Date(dataAtual),
+                        dataStr: formatarDataBR(dataAtual),
+                        diaSemana: getDiaSemana(dataAtual),
+                        fimDeSemana: ehFimDeSemana(dataAtual),
+                        feriado: ehFeriado(dataAtual),
                         suspended: susp,
                         final: false,
                         fase: labelFase
                     };
                     contagem.push(item);
                     if (susp) diasAlvo++;
-                    if (ehDiaUtil(dataAtual2)) diasUteisGastos++;
-                    dataAtual2.setDate(dataAtual2.getDate() + 1);
+                    if (ehDiaUtil(dataAtual)) diasUteisGastos++;
+                    dataAtual.setDate(dataAtual.getDate() + 1);
                 }
                 var ultimo = contagem[contagem.length - 1];
                 var dataFinalAjustada = proximoDiaUtil(ultimo.data);
@@ -552,8 +569,9 @@
             html += '</div>';
 
             html += '<div class="result-date">';
+            var primeiroDiaContado = fase1.contagem.filter(function(i) { return !i.naoConta; })[0];
             html += '<strong>Prazo final do edital:</strong> ' + formatarDataBR(dataFinalGeral) + ' (' + getDiaSemana(dataFinalGeral) + ')<br>';
-            html += '<strong>Início da contagem (dilação):</strong> ' + formatarDataBR(proximoDiaUtil(inicioContagem1)) + '<br>';
+            html += '<strong>Início da contagem (dilação):</strong> ' + primeiroDiaContado.dataStr + '<br>';
             if (fase2) {
                 html += '<strong>Total dias úteis (dilação + manifestação):</strong> ' + totalDiasUteis + ' dias úteis para lançar no PJe';
             }
