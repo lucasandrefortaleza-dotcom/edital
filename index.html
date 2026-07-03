@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Prazo de Edital - Vara da Infância e Juventude</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -258,6 +259,79 @@
             font-size: 10px;
         }
 
+        .btn-certificar {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            padding: 13px;
+            background: #1f2937;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14.5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-certificar:hover { background: #111827; }
+
+        .certidao-box {
+            margin-top: 20px;
+            background: #fffdf5;
+            border: 2px solid #1f2937;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .certidao-header {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+
+        .certidao-texto {
+            width: 100%;
+            min-height: 260px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            resize: vertical;
+            color: #1f2937;
+        }
+
+        .certidao-botoes {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn-secundario {
+            padding: 9px 16px;
+            background: white;
+            color: #1f2937;
+            border: 1.5px solid #1f2937;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-secundario:hover { background: #f3f4f6; }
+
+        .copiado-msg {
+            display: none;
+            margin-top: 8px;
+            color: #059669;
+            font-size: 12.5px;
+            font-weight: 600;
+        }
+
+        .copiado-msg.show { display: block; }
+
         @media (max-width: 768px) {
             .form-row, .form-row.three, .result-grid { grid-template-columns: 1fr; }
             .container { padding: 20px; }
@@ -282,6 +356,20 @@
             • <strong>Dias úteis (regra geral, CPC art. 219):</strong> o STJ (REsp 1933297/MT) fixou que o prazo de dilação de edital é <em>processual</em> e conta-se em dias úteis, "independentemente da finalidade ou natureza do prazo, salvo ressalva expressa do legislador".<br>
             • <strong>Dias corridos (ressalva legal expressa):</strong> aplica-se quando há lei específica em sentido contrário — por exemplo, o ECA (art. 152, §2º) determina dias corridos para os procedimentos que ele mesmo disciplina (adoção, destituição do poder familiar etc., conforme já levantado no ofício sobre classes ECA vs. CPC).<br>
             Por isso cada fase abaixo tem seletor próprio — confirme a natureza do procedimento antes de escolher.
+        </div>
+
+        <div class="form-section">
+            <div class="phase-title"><span class="num">•</span> Identificação (opcional, aparece na certidão)</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Número do Processo:</label>
+                    <input type="text" id="numeroProcesso" placeholder="0000000-00.0000.0.00.0000">
+                </div>
+                <div class="form-group">
+                    <label>Nome do Servidor(a) Certificante:</label>
+                    <input type="text" id="nomeServidor" placeholder="Nome completo">
+                </div>
+            </div>
         </div>
 
         <div class="form-section">
@@ -332,9 +420,12 @@
         </div>
 
         <div id="resultado"></div>
+        <div id="certidaoArea"></div>
     </div>
 
     <script>
+        var ultimoCalculo = null;
+
         var feriados = {
             '2025-01-01': 'Confraternização Universal',
             '2025-03-03': 'Carnaval',
@@ -532,6 +623,8 @@
 
             if (!dataPubStr || !diasDilacao) {
                 document.getElementById('resultado').innerHTML = '';
+                document.getElementById('certidaoArea').innerHTML = '';
+                ultimoCalculo = null;
                 return;
             }
 
@@ -626,13 +719,135 @@
             html += 'Confirme a regra de contagem (dias úteis x dias corridos) conforme a natureza do procedimento antes de lançar no sistema.';
             html += '</div>';
 
+            html += '<button class="btn-certificar" onclick="gerarCertidao()">📋 Certificar Prazo</button>';
             html += '<div class="footer">Created by Lucas</div>';
 
             document.getElementById('resultado').innerHTML = html;
+
+            // guarda o estado deste cálculo para a certidão (evita divergir do que foi mostrado)
+            ultimoCalculo = {
+                numeroProcesso: document.getElementById('numeroProcesso').value.trim(),
+                nomeServidor: document.getElementById('nomeServidor').value.trim(),
+                dataPublicacao: dataPublicacao,
+                diasDilacao: diasDilacao,
+                tipoDilacao: tipoDilacao,
+                fase1: fase1,
+                fase2: fase2,
+                dataFinalGeral: dataFinalGeral,
+                totalDiasUteis: totalDiasUteis,
+                primeiroDiaContado: primeiroDiaContado
+            };
+
+            // qualquer recálculo invalida a certidão já exibida (evita ficar em tela um texto desatualizado)
+            document.getElementById('certidaoArea').innerHTML = '';
         }
 
         var hoje = new Date();
         document.getElementById('dataPublicacao').value = formatarData(hoje);
+
+        function gerarCertidao() {
+            if (!ultimoCalculo) return;
+            var c = ultimoCalculo;
+
+            var numeroProcessoAtual = document.getElementById('numeroProcesso').value.trim();
+            var nomeServidorAtual = document.getElementById('nomeServidor').value.trim();
+
+            var processoTxt = numeroProcessoAtual ? 'nos autos do processo nº ' + numeroProcessoAtual + ', ' : '';
+            var servidorTxt = nomeServidorAtual ? nomeServidorAtual : 'Servidor(a) Geral - 3ª Vara da Infância e Juventude (assinado digitalmente)';
+
+            var texto = 'CERTIDÃO DE PRAZO\n\n';
+            texto += 'Certifico, ' + (processoTxt ? processoTxt : '') + 'para os devidos fins, que o Edital foi publicado em ' + formatarDataBR(c.dataPublicacao) + ' (' + getDiaSemana(c.dataPublicacao) + '), com prazo de dilação de ' + c.diasDilacao + ' (' + porExtenso(c.diasDilacao) + ') dias ' + (c.tipoDilacao === 'uteis' ? 'úteis' : 'corridos') + ', com início da contagem em ' + c.primeiroDiaContado.dataStr + ' e termo final em ' + formatarDataBR(c.fase1.dataFinal) + ' (' + getDiaSemana(c.fase1.dataFinal) + ').\n\n';
+
+            if (c.fase2) {
+                var diasManif = document.getElementById('diasManifestacao').value;
+                var tipoManif = document.getElementById('tipoManifestacao').value;
+                texto += 'Certifico, ainda, que, encerrada a dilação, correu prazo de manifestação/habilitação de ' + diasManif + ' (' + porExtenso(parseInt(diasManif)) + ') dias ' + (tipoManif === 'uteis' ? 'úteis' : 'corridos') + ', com termo final em ' + formatarDataBR(c.fase2.dataFinal) + ' (' + getDiaSemana(c.fase2.dataFinal) + ').\n\n';
+            }
+
+            texto += 'O cálculo considerou os feriados nacionais e estaduais e os pontos facultativos fixados pela Portaria nº 2924/2025 - Presidência do TJCE (DJE 17/12/2025).\n\n';
+            texto += 'Fortaleza, ' + formatarDataBR(hoje) + '.\n\n';
+            texto += servidorTxt;
+
+            var html = '<div class="certidao-box">';
+            html += '<div class="certidao-header">📋 Certidão de Prazo <span style="font-weight:400; font-size:12px; color:#6b7280;">(revise antes de copiar/gerar o PDF)</span></div>';
+            html += '<textarea id="textoCertidao" class="certidao-texto">' + texto + '</textarea>';
+            html += '<div class="certidao-botoes">';
+            html += '<button class="btn-secundario" onclick="copiarCertidao()">📄 Copiar Texto</button>';
+            html += '<button class="btn-secundario" onclick="gerarPDF()">⬇️ Gerar PDF</button>';
+            html += '</div>';
+            html += '<div id="copiadoMsg" class="copiado-msg">Copiado!</div>';
+            html += '</div>';
+
+            document.getElementById('certidaoArea').innerHTML = html;
+            document.getElementById('certidaoArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function copiarCertidao() {
+            var textarea = document.getElementById('textoCertidao');
+            textarea.select();
+            navigator.clipboard.writeText(textarea.value).then(function() {
+                var msg = document.getElementById('copiadoMsg');
+                msg.classList.add('show');
+                setTimeout(function() { msg.classList.remove('show'); }, 2000);
+            }).catch(function() {
+                document.execCommand('copy');
+            });
+        }
+
+        function gerarPDF() {
+            var texto = document.getElementById('textoCertidao').value;
+            var jsPDF = window.jspdf.jsPDF;
+            var doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+            var margemEsq = 25;
+            var margemDir = 25;
+            var larguraUtil = doc.internal.pageSize.getWidth() - margemEsq - margemDir;
+            var y = 30;
+
+            doc.setFont('times', 'normal');
+            doc.setFontSize(12);
+
+            var linhas = texto.split('\n');
+            for (var i = 0; i < linhas.length; i++) {
+                var linha = linhas[i];
+
+                if (i === 0) {
+                    // titulo "CERTIDAO DE PRAZO" centralizado e em negrito
+                    doc.setFont('times', 'bold');
+                    doc.text(linha, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+                    doc.setFont('times', 'normal');
+                    y += 12;
+                    continue;
+                }
+
+                if (linha.trim() === '') {
+                    y += 6;
+                    continue;
+                }
+
+                var quebradas = doc.splitTextToSize(linha, larguraUtil);
+                for (var j = 0; j < quebradas.length; j++) {
+                    if (y > doc.internal.pageSize.getHeight() - 25) {
+                        doc.addPage();
+                        y = 30;
+                    }
+                    doc.text(quebradas[j], margemEsq, y, { align: 'justify', maxWidth: larguraUtil });
+                    y += 6.5;
+                }
+            }
+
+            var numeroProcessoPdf = document.getElementById('numeroProcesso').value.trim();
+            var numeroProcesso = numeroProcessoPdf ? numeroProcessoPdf.replace(/[^\d]/g, '').slice(0, 10) : '';
+            var nomeArquivo = 'certidao-prazo-edital' + (numeroProcesso ? '-' + numeroProcesso : '') + '.pdf';
+            doc.save(nomeArquivo);
+        }
+
+        function porExtenso(n) {
+            var nomes = { 1:'um', 2:'dois', 3:'três', 4:'quatro', 5:'cinco', 6:'seis', 7:'sete', 8:'oito', 9:'nove', 10:'dez',
+                11:'onze', 12:'doze', 13:'treze', 14:'quatorze', 15:'quinze', 16:'dezesseis', 17:'dezessete', 18:'dezoito',
+                19:'dezenove', 20:'vinte', 30:'trinta', 40:'quarenta', 45:'quarenta e cinco', 60:'sessenta', 90:'noventa' };
+            return nomes[n] || String(n);
+        }
 
         document.getElementById('temFase2').addEventListener('change', function() {
             var el = document.getElementById('fase2Fields');
