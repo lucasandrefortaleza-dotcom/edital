@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Prazo de Edital - Vara da Infância e Juventude</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 35px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 8px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 25px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .info-box {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-box.legal {
+            background: #f5f3ff;
+            border-left-color: #7c3aed;
+        }
+
+        .form-section {
+            background: #f9fafb;
+            padding: 22px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .phase-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #4338ca;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .phase-title .num {
+            background: #667eea;
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .form-row.three {
+            grid-template-columns: 1fr 1fr 1.3fr;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        input, select {
+            padding: 11px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .toggle-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .toggle-row label {
+            margin: 0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        #fase2Fields {
+            display: none;
+        }
+
+        #fase2Fields.show {
+            display: block;
+        }
+
+        .result-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 28px;
+            border-radius: 12px;
+            margin-bottom: 22px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 18px;
+        }
+
+        .result-item {
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 6px;
+        }
+
+        .result-number {
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        .result-date {
+            padding-top: 18px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            font-size: 14.5px;
+            line-height: 1.8;
+        }
+
+        .table-section {
+            margin-top: 22px;
+        }
+
+        .table-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover { background: #f9fafb; }
+
+        .weekend { background: #fef3c7; }
+        .holiday { background: #fee2e2; }
+        .suspended { background: #fce7f3; }
+        .final-date { background: #d1fae5; font-weight: 600; }
+        .fase2-row { background: #ede9fe; }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 10.5px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .badge-weekend { background: #fbbf24; color: #78350f; }
+        .badge-holiday { background: #ef4444; color: white; }
+        .badge-suspended { background: #ec4899; color: white; }
+        .badge-fase2 { background: #7c3aed; color: white; }
+
+        .warning-box {
+            background: #fffbeb;
+            border: 1px solid #fbbf24;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 18px;
+            font-size: 12.5px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 28px;
+            padding-top: 18px;
+            border-top: 1px solid #e5e7eb;
+            color: #9ca3af;
+            font-size: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row, .form-row.three, .result-grid { grid-template-columns: 1fr; }
+            .container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Calculadora de Prazo de Edital</h1>
+        <p class="subtitle">3ª Vara da Infância e Juventude - TJCE</p>
+
+        <div class="info-box">
+            <strong>ℹ️ Como funciona:</strong><br>
+            • <strong>Fase 1 (dilação):</strong> período em que o edital produz efeito, antes de gerar qualquer prazo de resposta<br>
+            • <strong>Fase 2 (manifestação/habilitação):</strong> opcional — prazo que corre a partir do fim da dilação<br>
+            • Considera feriados nacionais/estaduais do Ceará e a suspensão do recesso forense (20/12 a 06/01, Art. 220 CPC)<br>
+            • <a href="https://www.tjce.jus.br/calendario/" target="_blank" style="color:#2563eb; font-weight:600;">📆 Ver calendário oficial do TJCE</a>
+        </div>
+
+        <div class="info-box legal">
+            <strong>⚖️ Base legal — qual regra usar:</strong><br>
+            • <strong>Dias úteis (regra geral, CPC art. 219):</strong> o STJ (REsp 1933297/MT) fixou que o prazo de dilação de edital é <em>processual</em> e conta-se em dias úteis, "independentemente da finalidade ou natureza do prazo, salvo ressalva expressa do legislador".<br>
+            • <strong>Dias corridos (ressalva legal expressa):</strong> aplica-se quando há lei específica em sentido contrário — por exemplo, o ECA (art. 152, §2º) determina dias corridos para os procedimentos que ele mesmo disciplina (adoção, destituição do poder familiar etc., conforme já levantado no ofício sobre classes ECA vs. CPC).<br>
+            Por isso cada fase abaixo tem seletor próprio — confirme a natureza do procedimento antes de escolher.
+        </div>
+
+        <div class="form-section">
+            <div class="phase-title"><span class="num">1</span> Dilação do Edital</div>
+            <div class="form-row three">
+                <div class="form-group">
+                    <label>Data de Publicação do Edital:</label>
+                    <input type="date" id="dataPublicacao">
+                </div>
+                <div class="form-group">
+                    <label>Dias de Dilação:</label>
+                    <input type="number" id="diasDilacao" value="20" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Contagem:</label>
+                    <select id="tipoDilacao">
+                        <option value="uteis">Dias Úteis (CPC art. 219)</option>
+                        <option value="corridos">Dias Corridos (ECA art. 152, §2º)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="toggle-row" style="margin-top: 6px; border-bottom: none; padding-bottom: 0;">
+                <input type="checkbox" id="temFase2">
+                <label for="temFase2">Adicionar prazo de manifestação/habilitação após a dilação</label>
+            </div>
+        </div>
+
+        <div class="form-section" id="fase2Fields">
+            <div class="phase-title"><span class="num">2</span> Manifestação / Habilitação</div>
+            <div class="form-row three">
+                <div class="form-group">
+                    <label>Início:</label>
+                    <input type="text" value="1º dia útil após o fim da dilação" disabled style="background:#f3f4f6; color:#6b7280; font-size:13px;">
+                </div>
+                <div class="form-group">
+                    <label>Dias de Manifestação:</label>
+                    <input type="number" id="diasManifestacao" value="15" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Contagem:</label>
+                    <select id="tipoManifestacao">
+                        <option value="uteis">Dias Úteis (CPC art. 219)</option>
+                        <option value="corridos">Dias Corridos (ECA art. 152, §2º)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        var feriados = {
+            '2025-01-01': 'Confraternização Universal',
+            '2025-03-03': 'Carnaval',
+            '2025-03-04': 'Carnaval',
+            '2025-03-05': 'Quarta de Cinzas (até 14h)',
+            '2025-03-19': 'São José (Padroeiro do Ceará)',
+            '2025-03-25': 'Data Magna do Ceará',
+            '2025-04-17': 'Quinta-feira Santa',
+            '2025-04-18': 'Sexta-feira Santa',
+            '2025-04-21': 'Tiradentes',
+            '2025-05-01': 'Dia do Trabalho',
+            '2025-06-19': 'Corpus Christi',
+            '2025-08-15': 'Nossa Senhora da Assunção',
+            '2025-09-07': 'Independência do Brasil',
+            '2025-10-12': 'Nossa Senhora Aparecida',
+            '2025-10-28': 'Dia do Servidor Público Estadual',
+            '2025-11-02': 'Finados',
+            '2025-11-15': 'Proclamação da República',
+            '2025-11-20': 'Consciência Negra',
+            '2025-12-08': 'Dia da Justiça',
+            '2025-12-25': 'Natal',
+            '2026-01-01': 'Confraternização Universal',
+            '2026-02-16': 'Carnaval',
+            '2026-02-17': 'Carnaval',
+            '2026-02-18': 'Quarta de Cinzas (até 14h)',
+            '2026-03-19': 'São José',
+            '2026-03-25': 'Data Magna do Ceará',
+            '2026-04-02': 'Quinta-feira Santa',
+            '2026-04-03': 'Sexta-feira Santa',
+            '2026-04-21': 'Tiradentes',
+            '2026-05-01': 'Dia do Trabalho',
+            '2026-06-04': 'Corpus Christi',
+            '2026-08-15': 'Nossa Senhora da Assunção',
+            '2026-09-07': 'Independência do Brasil',
+            '2026-10-12': 'Nossa Senhora Aparecida',
+            '2026-10-28': 'Dia do Servidor Público Estadual',
+            '2026-11-02': 'Finados',
+            '2026-11-15': 'Proclamação da República',
+            '2026-11-20': 'Consciência Negra',
+            '2026-12-08': 'Dia da Justiça',
+            '2026-12-25': 'Natal',
+            '2027-01-01': 'Confraternização Universal'
+        };
+
+        function formatarData(d) {
+            var dia = d.getDate(), mes = d.getMonth() + 1, ano = d.getFullYear();
+            if (dia < 10) dia = '0' + dia;
+            if (mes < 10) mes = '0' + mes;
+            return ano + '-' + mes + '-' + dia;
+        }
+
+        function formatarDataBR(d) {
+            var dia = d.getDate(), mes = d.getMonth() + 1, ano = d.getFullYear();
+            if (dia < 10) dia = '0' + dia;
+            if (mes < 10) mes = '0' + mes;
+            return dia + '/' + mes + '/' + ano;
+        }
+
+        function getDiaSemana(d) {
+            var dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+            return dias[d.getDay()];
+        }
+
+        function ehRecesso(data) {
+            var mes = data.getMonth() + 1, dia = data.getDate(), ano = data.getFullYear();
+            if (ano === 2025 && mes === 12 && dia >= 20) return true;
+            if (ano === 2026 && ((mes === 1 && dia <= 6) || (mes === 12 && dia >= 20))) return true;
+            if (ano === 2027 && mes === 1 && dia <= 6) return true;
+            return false;
+        }
+
+        function ehFeriado(data) {
+            return feriados[formatarData(data)] || null;
+        }
+
+        function ehFimDeSemana(data) {
+            var dia = data.getDay();
+            return dia === 0 || dia === 6;
+        }
+
+        function ehDiaUtil(data) {
+            if (ehFimDeSemana(data)) return false;
+            if (ehFeriado(data)) return false;
+            if (ehRecesso(data)) return false;
+            return true;
+        }
+
+        function proximoDiaUtil(data) {
+            var d = new Date(data);
+            while (!ehDiaUtil(d)) {
+                d.setDate(d.getDate() + 1);
+            }
+            return d;
+        }
+
+        // Calcula uma fase de prazo. Retorna {contagem: [...], dataFinal: Date, diasUteisGastos: n}
+        function calcularFase(dataInicioBruta, dias, tipo, labelFase) {
+            var contagem = [];
+            var dataInicio;
+
+            if (tipo === 'uteis') {
+                // contagem em dias uteis: inicio so pode ser dia util
+                dataInicio = proximoDiaUtil(dataInicioBruta);
+                var dataAtual = new Date(dataInicio);
+                var contador = 0;
+                while (contador < dias) {
+                    if (ehDiaUtil(dataAtual)) {
+                        contador++;
+                        contagem.push({
+                            numero: contador,
+                            data: new Date(dataAtual),
+                            dataStr: formatarDataBR(dataAtual),
+                            diaSemana: getDiaSemana(dataAtual),
+                            fimDeSemana: false,
+                            feriado: null,
+                            suspended: false,
+                            final: contador === dias,
+                            fase: labelFase
+                        });
+                    } else {
+                        contagem.push({
+                            numero: contador,
+                            data: new Date(dataAtual),
+                            dataStr: formatarDataBR(dataAtual),
+                            diaSemana: getDiaSemana(dataAtual),
+                            fimDeSemana: ehFimDeSemana(dataAtual),
+                            feriado: ehFeriado(dataAtual),
+                            suspended: ehRecesso(dataAtual),
+                            final: false,
+                            fase: labelFase,
+                            naoConta: true
+                        });
+                    }
+                    dataAtual.setDate(dataAtual.getDate() + 1);
+                }
+                var dataFinal = contagem[contagem.length - 1].data;
+                return { contagem: contagem, dataFinal: dataFinal, diasUteisGastos: dias };
+            } else {
+                // dias corridos: inicio no dia seguinte ao marco, conta todo santo dia,
+                // mas fica suspenso durante o recesso (Art. 220 CPC)
+                dataInicio = new Date(dataInicioBruta);
+                var dataAtual2 = new Date(dataInicio);
+                var contador2 = 0;
+                var diasUteisGastos = 0;
+                var diasAlvo = dias;
+                while (contador2 < diasAlvo) {
+                    contador2++;
+                    var susp = ehRecesso(dataAtual2);
+                    var item = {
+                        numero: contador2,
+                        data: new Date(dataAtual2),
+                        dataStr: formatarDataBR(dataAtual2),
+                        diaSemana: getDiaSemana(dataAtual2),
+                        fimDeSemana: ehFimDeSemana(dataAtual2),
+                        feriado: ehFeriado(dataAtual2),
+                        suspended: susp,
+                        final: false,
+                        fase: labelFase
+                    };
+                    contagem.push(item);
+                    if (susp) diasAlvo++;
+                    if (ehDiaUtil(dataAtual2)) diasUteisGastos++;
+                    dataAtual2.setDate(dataAtual2.getDate() + 1);
+                }
+                var ultimo = contagem[contagem.length - 1];
+                var dataFinalAjustada = proximoDiaUtil(ultimo.data);
+                ultimo.final = true;
+                ultimo.dataFinalAjustada = dataFinalAjustada;
+                return { contagem: contagem, dataFinal: dataFinalAjustada, diasUteisGastos: diasUteisGastos };
+            }
+        }
+
+        function calcular() {
+            var dataPubStr = document.getElementById('dataPublicacao').value;
+            var diasDilacao = parseInt(document.getElementById('diasDilacao').value);
+            var tipoDilacao = document.getElementById('tipoDilacao').value;
+            var temFase2 = document.getElementById('temFase2').checked;
+
+            if (!dataPubStr || !diasDilacao) {
+                document.getElementById('resultado').innerHTML = '';
+                return;
+            }
+
+            var dataPublicacao = new Date(dataPubStr + 'T12:00:00');
+            var inicioContagem1 = new Date(dataPublicacao);
+            inicioContagem1.setDate(inicioContagem1.getDate() + 1);
+
+            var fase1 = calcularFase(inicioContagem1, diasDilacao, tipoDilacao, 'Dilação');
+
+            var contagemTotal = fase1.contagem.slice();
+            var fase2 = null;
+
+            if (temFase2) {
+                var diasManif = parseInt(document.getElementById('diasManifestacao').value);
+                var tipoManif = document.getElementById('tipoManifestacao').value;
+                if (diasManif) {
+                    var inicioContagem2 = new Date(fase1.dataFinal);
+                    inicioContagem2.setDate(inicioContagem2.getDate() + 1);
+                    fase2 = calcularFase(inicioContagem2, diasManif, tipoManif, 'Manifestação');
+                    contagemTotal = contagemTotal.concat(fase2.contagem);
+                }
+            }
+
+            var dataFinalGeral = fase2 ? fase2.dataFinal : fase1.dataFinal;
+            var totalDiasUteis = fase1.diasUteisGastos + (fase2 ? fase2.diasUteisGastos : 0);
+
+            var html = '<div class="result-box">';
+            html += '<div class="result-grid">';
+            html += '<div class="result-item"><div class="result-label">Fim da Dilação</div><div style="font-size:20px; font-weight:600;">' + formatarDataBR(fase1.dataFinal) + '</div></div>';
+            if (fase2) {
+                html += '<div class="result-item"><div class="result-label">Fim da Manifestação</div><div style="font-size:20px; font-weight:600;">' + formatarDataBR(fase2.dataFinal) + '</div></div>';
+            } else {
+                html += '<div class="result-item"><div class="result-label">Dias Úteis a Lançar no PJe</div><div class="result-number">' + totalDiasUteis + '</div></div>';
+            }
+            html += '</div>';
+
+            html += '<div class="result-date">';
+            html += '<strong>Prazo final do edital:</strong> ' + formatarDataBR(dataFinalGeral) + ' (' + getDiaSemana(dataFinalGeral) + ')<br>';
+            html += '<strong>Início da contagem (dilação):</strong> ' + formatarDataBR(proximoDiaUtil(inicioContagem1)) + '<br>';
+            if (fase2) {
+                html += '<strong>Total dias úteis (dilação + manifestação):</strong> ' + totalDiasUteis + ' dias úteis para lançar no PJe';
+            }
+            html += '</div></div>';
+
+            html += '<div class="table-section">';
+            html += '<div class="table-title">Contagem Detalhada</div>';
+            html += '<table><thead><tr><th>Fase</th><th>Contagem</th><th>Data</th><th>Observação</th></tr></thead><tbody>';
+
+            for (var i = 0; i < contagemTotal.length; i++) {
+                var item = contagemTotal[i];
+                var classe = item.fase === 'Manifestação' ? 'fase2-row' : '';
+                var obs = '';
+
+                if (item.final) {
+                    classe = 'final-date';
+                    obs = '✓ <strong>Fim de ' + item.fase + '</strong>';
+                    if (item.dataFinalAjustada && formatarDataBR(item.dataFinalAjustada) !== item.dataStr) {
+                        obs += ' <small>(ajustado p/ ' + formatarDataBR(item.dataFinalAjustada) + ')</small>';
+                    }
+                } else if (item.suspended) {
+                    classe = 'suspended';
+                    obs = '<span class="badge badge-suspended">Recesso</span> Suspensão do prazo (Art. 220 CPC)';
+                } else if (item.feriado) {
+                    classe = 'holiday';
+                    obs = '<span class="badge badge-holiday">Feriado</span> ' + item.feriado;
+                } else if (item.fimDeSemana) {
+                    classe = 'weekend';
+                    obs = '<span class="badge badge-weekend">Final de Semana</span>';
+                } else if (item.fase === 'Manifestação' && item.numero === 1) {
+                    obs = '<span class="badge badge-fase2">Manifestação</span> Início da 2ª fase';
+                }
+
+                html += '<tr class="' + classe + '">';
+                html += '<td>' + item.fase + '</td>';
+                html += '<td>' + (item.naoConta ? '—' : item.numero) + '</td>';
+                html += '<td>' + item.dataStr + ' - ' + item.diaSemana + '</td>';
+                html += '<td>' + obs + '</td>';
+                html += '</tr>';
+            }
+
+            html += '</tbody></table></div>';
+
+            html += '<div class="warning-box">';
+            html += '<strong>⚠️ Importante:</strong> ';
+            if (fase2) {
+                html += 'Lance <strong style="color:#667eea; font-size:15px;">' + fase1.diasUteisGastos + ' dias úteis</strong> para a dilação e, após seu término, mais <strong style="color:#667eea; font-size:15px;">' + fase2.diasUteisGastos + ' dias úteis</strong> para a manifestação. ';
+            } else {
+                html += 'Lance <strong style="color:#667eea; font-size:15px;">' + totalDiasUteis + ' dias úteis</strong> no sistema PJe. ';
+            }
+            html += 'Este cálculo já considera a suspensão de prazos no recesso (20/12 a 06/01) e os feriados cadastrados. ';
+            html += 'Confirme a regra de contagem (dias úteis x dias corridos) conforme a natureza do procedimento antes de lançar no sistema.';
+            html += '</div>';
+
+            html += '<div class="footer">Created by Lucas</div>';
+
+            document.getElementById('resultado').innerHTML = html;
+        }
+
+        var hoje = new Date();
+        document.getElementById('dataPublicacao').value = formatarData(hoje);
+
+        document.getElementById('temFase2').addEventListener('change', function() {
+            var el = document.getElementById('fase2Fields');
+            if (this.checked) {
+                el.classList.add('show');
+            } else {
+                el.classList.remove('show');
+            }
+            calcular();
+        });
+
+        calcular();
+
+        document.getElementById('diasDilacao').addEventListener('input', calcular);
+        document.getElementById('dataPublicacao').addEventListener('change', calcular);
+        document.getElementById('tipoDilacao').addEventListener('change', calcular);
+        document.getElementById('diasManifestacao').addEventListener('input', calcular);
+        document.getElementById('tipoManifestacao').addEventListener('change', calcular);
+    </script>
+</body>
+</html>
